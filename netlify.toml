@@ -1,0 +1,4 @@
+[[headers]]
+  for = "/*"
+  [headers.values]
+    google-site-verification = "Nz8D6m15w1wOYkprRGlVicBrb3SisAxWufF2WA1uMz8"

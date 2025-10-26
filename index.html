@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master Pro Challenger</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .screen {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        h2 {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin: 10px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 200px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-level {
+            display: block;
+            margin: 10px auto;
+            width: 90%;
+        }
+
+        .level-locked {
+            opacity: 0.5;
+            position: relative;
+        }
+
+        .level-locked::after {
+            content: "🔒";
+            position: absolute;
+            right: 15px;
+        }
+
+        .question {
+            font-size: 20px;
+            margin: 20px 0;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .option-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .option-btn.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        .progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .reset-btn:hover {
+            background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+        }
+
+        .warning-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .warning-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .warning-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .level-info {
+            font-size: 14px;
+            color: #666;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Menu Screen -->
+    <div id="mainMenu" class="screen active">
+        <h1>🎯 Quiz Master Pro Challenger</h1>
+        <p>Test your knowledge across 10 challenging levels!</p>
+        <button class="btn" onclick="showScreen('levelSelect')">Start Game</button>
+        <button class="btn" onclick="showScreen('settings')">Settings</button>
+    </div>
+
+    <!-- Level Selection Screen -->
+    <div id="levelSelect" class="screen">
+        <h1>Select Level</h1>
+        <div id="levelButtons">
+            <!-- Levels will be generated here by JavaScript -->
+        </div>
+        <button class="btn" onclick="showScreen('mainMenu')">Back to Menu</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <h2 id="levelTitle">Level 1</h2>
+        <div class="progress">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <div id="question" class="question"></div>
+        <div id="options" class="options"></div>
+        <div id="score" class="score">Score: 0/5</div>
+    </div>
+
+    <!-- Level Complete Screen -->
+    <div id="levelComplete" class="screen">
+        <h1>🎉 Level Complete!</h1>
+        <div id="finalScore" class="score">Score: 0/5</div>
+        <p>Congratulations! You passed this level.</p>
+        <button class="btn" onclick="handleLevelComplete()">OK</button>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings" class="screen">
+        <h1>Settings</h1>
+        <div class="settings-option">
+            <span>Reset All Game Data</span>
+            <button class="btn reset-btn" onclick="showResetWarning()">Reset Data</button>
+        </div>
+        <button class="btn" onclick="showScreen('mainMenu')">Back to Menu</button>
+    </div>
+
+    <!-- Reset Warning Modal -->
+    <div id="resetWarning" class="warning-modal" style="display: none;">
+        <div class="warning-content">
+            <h2>⚠️ Reset Game Data</h2>
+            <p>Are you sure you want to reset all your progress?</p>
+            <p><strong>This action cannot be undone!</strong></p>
+            <div class="warning-buttons">
+                <button class="btn reset-btn" onclick="resetGameData()">Yes, Reset</button>
+                <button class="btn" onclick="hideResetWarning()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Data and State
+        const gameData = {
+            levels: [],
+            currentLevel: 0,
+            currentQuestion: 0,
+            score: 0,
+            unlockedLevels: 1,
+            usedQuestions: new Set() // Track used questions to avoid repetition
+        };
+
+        // LARGE Question Database - Mixed Categories (100+ questions)
+        const questionDatabase = [
+            // Math Questions (20)
+            { question: "What is 15 + 27?", options: ["42", "32", "52", "37"], correctAnswer: "42" },
+            { question: "What is 8 × 9?", options: ["72", "81", "64", "76"], correctAnswer: "72" },
+            { question: "What is 144 ÷ 12?", options: ["12", "14", "10", "16"], correctAnswer: "12" },
+            { question: "What is 65 - 28?", options: ["37", "43", "47", "33"], correctAnswer: "37" },
+            { question: "What is 7² (7 squared)?", options: ["49", "42", "56", "35"], correctAnswer: "49" },
+            { question: "What is 25% of 200?", options: ["50", "25", "75", "100"], correctAnswer: "50" },
+            { question: "What is 3³ (3 cubed)?", options: ["27", "9", "18", "12"], correctAnswer: "27" },
+            { question: "What is 18 × 4?", options: ["72", "64", "76", "68"], correctAnswer: "72" },
+            { question: "What is 125 ÷ 5?", options: ["25", "20", "30", "15"], correctAnswer: "25" },
+            { question: "What is 89 + 47?", options: ["136", "126", "146", "116"], correctAnswer: "136" },
+            { question: "What is 15 × 6?", options: ["90", "80", "100", "70"], correctAnswer: "90" },
+            { question: "What is 200 - 87?", options: ["113", "123", "103", "93"], correctAnswer: "113" },
+            { question: "What is 64 ÷ 8?", options: ["8", "6", "7", "9"], correctAnswer: "8" },
+            { question: "What is 12 × 11?", options: ["132", "122", "142", "112"], correctAnswer: "132" },
+            { question: "What is 50% of 180?", options: ["90", "80", "100", "70"], correctAnswer: "90" },
+            { question: "What is 17 + 28?", options: ["45", "35", "55", "40"], correctAnswer: "45" },
+            { question: "What is 9 × 7?", options: ["63", "56", "72", "54"], correctAnswer: "63" },
+            { question: "What is 81 ÷ 9?", options: ["9", "8", "7", "10"], correctAnswer: "9" },
+            { question: "What is 150 - 75?", options: ["75", "65", "85", "70"], correctAnswer: "75" },
+            { question: "What is 6 × 13?", options: ["78", "68", "88", "72"], correctAnswer: "78" },
+
+            // GK Questions (20)
+            { question: "What is the capital of Japan?", options: ["Tokyo", "Beijing", "Seoul", "Bangkok"], correctAnswer: "Tokyo" },
+            { question: "Which planet is known as the Red Planet?", options: ["Mars", "Venus", "Jupiter", "Saturn"], correctAnswer: "Mars" },
+            { question: "How many continents are there?", options: ["7", "6", "5", "8"], correctAnswer: "7" },
+            { question: "What is the largest ocean on Earth?", options: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"], correctAnswer: "Pacific Ocean" },
+            { question: "Who painted the Mona Lisa?", options: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"], correctAnswer: "Leonardo da Vinci" },
+            { question: "What is the currency of the United Kingdom?", options: ["Pound Sterling", "Euro", "Dollar", "Yen"], correctAnswer: "Pound Sterling" },
+            { question: "Which country is known as the Land of the Rising Sun?", options: ["Japan", "China", "India", "Thailand"], correctAnswer: "Japan" },
+            { question: "What is the tallest mountain in the world?", options: ["Mount Everest", "K2", "Kangchenjunga", "Makalu"], correctAnswer: "Mount Everest" },
+            { question: "How many players are in a cricket team?", options: ["11", "10", "12", "9"], correctAnswer: "11" },
+            { question: "What is the capital of France?", options: ["Paris", "London", "Berlin", "Rome"], correctAnswer: "Paris" },
+            { question: "Which is the largest country by area?", options: ["Russia", "Canada", "China", "USA"], correctAnswer: "Russia" },
+            { question: "What is the currency of Japan?", options: ["Yen", "Won", "Yuan", "Ringgit"], correctAnswer: "Yen" },
+            { question: "Which city is known as the Big Apple?", options: ["New York", "Los Angeles", "Chicago", "Miami"], correctAnswer: "New York" },
+            { question: "What is the national animal of India?", options: ["Tiger", "Lion", "Elephant", "Peacock"], correctAnswer: "Tiger" },
+            { question: "Which planet is known as the Blue Planet?", options: ["Earth", "Neptune", "Uranus", "Mercury"], correctAnswer: "Earth" },
+            { question: "What is the capital of Australia?", options: ["Canberra", "Sydney", "Melbourne", "Perth"], correctAnswer: "Canberra" },
+            { question: "Which is the smallest continent?", options: ["Australia", "Europe", "Antarctica", "South America"], correctAnswer: "Australia" },
+            { question: "What is the currency of China?", options: ["Yuan", "Yen", "Won", "Ringgit"], correctAnswer: "Yuan" },
+            { question: "Which city has the Eiffel Tower?", options: ["Paris", "London", "Berlin", "Rome"], correctAnswer: "Paris" },
+            { question: "What is the national sport of Canada?", options: ["Ice Hockey", "Lacrosse", "Basketball", "Soccer"], correctAnswer: "Ice Hockey" },
+
+            // Science Questions (20)
+            { question: "What is H2O commonly known as?", options: ["Water", "Salt", "Oxygen", "Hydrogen"], correctAnswer: "Water" },
+            { question: "Which gas do plants absorb from the atmosphere?", options: ["Carbon Dioxide", "Oxygen", "Nitrogen", "Hydrogen"], correctAnswer: "Carbon Dioxide" },
+            { question: "What is the chemical symbol for Gold?", options: ["Au", "Ag", "Go", "Gd"], correctAnswer: "Au" },
+            { question: "How many bones are in the adult human body?", options: ["206", "200", "210", "196"], correctAnswer: "206" },
+            { question: "What is the closest planet to the Sun?", options: ["Mercury", "Venus", "Earth", "Mars"], correctAnswer: "Mercury" },
+            { question: "What is the hardest natural substance on Earth?", options: ["Diamond", "Gold", "Iron", "Platinum"], correctAnswer: "Diamond" },
+            { question: "Which planet has the most moons?", options: ["Saturn", "Jupiter", "Uranus", "Neptune"], correctAnswer: "Saturn" },
+            { question: "What is the main gas found in the Earth's atmosphere?", options: ["Nitrogen", "Oxygen", "Carbon Dioxide", "Argon"], correctAnswer: "Nitrogen" },
+            { question: "How many hearts does an octopus have?", options: ["3", "2", "1", "4"], correctAnswer: "3" },
+            { question: "What is the speed of light in vacuum?", options: ["299,792 km/s", "300,000 km/s", "250,000 km/s", "350,000 km/s"], correctAnswer: "299,792 km/s" },
+            { question: "Which metal is liquid at room temperature?", options: ["Mercury", "Iron", "Gold", "Silver"], correctAnswer: "Mercury" },
+            { question: "What is the largest organ in the human body?", options: ["Skin", "Liver", "Heart", "Lungs"], correctAnswer: "Skin" },
+            { question: "Which gas is most abundant in the Sun?", options: ["Hydrogen", "Helium", "Oxygen", "Nitrogen"], correctAnswer: "Hydrogen" },
+            { question: "How many elements are in the periodic table?", options: ["118", "116", "120", "112"], correctAnswer: "118" },
+            { question: "What is the study of fossils called?", options: ["Paleontology", "Archaeology", "Geology", "Biology"], correctAnswer: "Paleontology" },
+            { question: "Which planet is known for its rings?", options: ["Saturn", "Jupiter", "Uranus", "Neptune"], correctAnswer: "Saturn" },
+            { question: "What is the unit of electric current?", options: ["Ampere", "Volt", "Watt", "Ohm"], correctAnswer: "Ampere" },
+            { question: "Which blood type is the universal donor?", options: ["O negative", "A positive", "B negative", "AB positive"], correctAnswer: "O negative" },
+            { question: "What is the chemical symbol for Silver?", options: ["Ag", "Au", "Si", "Sr"], correctAnswer: "Ag" },
+            { question: "How many chromosomes do humans have?", options: ["46", "44", "48", "42"], correctAnswer: "46" },
+
+            // Common Knowledge Questions (20)
+            { question: "How many days are in a leap year?", options: ["366", "365", "364", "367"], correctAnswer: "366" },
+            { question: "What is the largest mammal in the world?", options: ["Blue Whale", "Elephant", "Giraffe", "Polar Bear"], correctAnswer: "Blue Whale" },
+            { question: "How many hours are in 3 days?", options: ["72", "48", "96", "60"], correctAnswer: "72" },
+            { question: "Which animal is known as the King of the Jungle?", options: ["Lion", "Tiger", "Elephant", "Gorilla"], correctAnswer: "Lion" },
+            { question: "How many sides does a hexagon have?", options: ["6", "5", "7", "8"], correctAnswer: "6" },
+            { question: "What is the largest bird in the world?", options: ["Ostrich", "Eagle", "Albatross", "Penguin"], correctAnswer: "Ostrich" },
+            { question: "How many years are in a century?", options: ["100", "50", "200", "1000"], correctAnswer: "100" },
+            { question: "Which is the fastest land animal?", options: ["Cheetah", "Lion", "Tiger", "Horse"], correctAnswer: "Cheetah" },
+            { question: "How many strings does a guitar have?", options: ["6", "5", "7", "4"], correctAnswer: "6" },
+            { question: "What is the most spoken language in the world?", options: ["Mandarin Chinese", "English", "Spanish", "Hindi"], correctAnswer: "Mandarin Chinese" },
+            { question: "How many planets are in our solar system?", options: ["8", "7", "9", "10"], correctAnswer: "8" },
+            { question: "Which is the largest desert in the world?", options: ["Antarctica", "Sahara", "Arabian", "Gobi"], correctAnswer: "Antarctica" },
+            { question: "How many Olympic rings are there?", options: ["5", "4", "6", "7"], correctAnswer: "5" },
+            { question: "What is the most consumed beverage in the world?", options: ["Tea", "Coffee", "Water", "Beer"], correctAnswer: "Tea" },
+            { question: "How many cards are in a standard deck?", options: ["52", "50", "54", "48"], correctAnswer: "52" },
+            { question: "Which is the longest river in the world?", options: ["Nile", "Amazon", "Yangtze", "Mississippi"], correctAnswer: "Nile" },
+            { question: "How many bones are in the human hand?", options: ["27", "26", "28", "25"], correctAnswer: "27" },
+            { question: "What is the most popular social media platform?", options: ["Facebook", "Instagram", "Twitter", "TikTok"], correctAnswer: "Facebook" },
+            { question: "How many time zones are in Russia?", options: ["11", "10", "9", "12"], correctAnswer: "11" },
+            { question: "Which is the most populated country?", options: ["India", "China", "USA", "Indonesia"], correctAnswer: "India" }
+        ];
+
+        // Function to shuffle array randomly
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Prepare question with shuffled options
+        function prepareQuestion(questionData) {
+            const question = {...questionData};
+            const correctAnswer = question.correctAnswer;
+            const shuffledOptions = shuffleArray([...question.options]);
+            const correctIndex = shuffledOptions.indexOf(correctAnswer);
+            
+            return {
+                question: question.question,
+                options: shuffledOptions,
+                correct: correctIndex
+            };
+        }
+
+        // Get unique random questions that haven't been used before
+        function getUniqueRandomQuestions(count) {
+            // Get all questions that haven't been used
+            const availableQuestions = questionDatabase.filter(q => !gameData.usedQuestions.has(q.question));
+            
+            // If not enough unique questions, use all available
+            if (availableQuestions.length < count) {
+                console.log("Not enough unique questions, reusing some questions");
+                // Reset used questions and use all
+                gameData.usedQuestions.clear();
+                return getRandomQuestions(count);
+            }
+            
+            // Shuffle and select required number of questions
+            const shuffled = shuffleArray([...availableQuestions]);
+            const selectedQuestions = shuffled.slice(0, count);
+            
+            // Mark these questions as used
+            selectedQuestions.forEach(q => gameData.usedQuestions.add(q.question));
+            
+            // Prepare each question with shuffled options
+            return selectedQuestions.map(prepareQuestion);
+        }
+
+        // Fallback function if unique questions not available
+        function getRandomQuestions(count) {
+            const shuffled = shuffleArray([...questionDatabase]);
+            const selectedQuestions = shuffled.slice(0, count);
+            return selectedQuestions.map(prepareQuestion);
+        }
+
+        // Generate 10 levels with increasing questions
+        function generateLevels() {
+            // Clear used questions when generating new levels
+            gameData.usedQuestions.clear();
+            
+            for(let level = 1; level <= 10; level++) {
+                const questionCount = level * 5;
+                const questions = getUniqueRandomQuestions(questionCount);
+                
+                gameData.levels.push({
+                    title: `Level ${level}`,
+                    questions: questions,
+                    questionCount: questionCount
+                });
+            }
+        }
+
+        // POKI.COM PROGRESS SAVE - Using LocalStorage
+        function saveGameProgress() {
+            try {
+                const saveData = {
+                    unlockedLevels: gameData.unlockedLevels,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('quizMasterProChallenger', JSON.stringify(saveData));
+                console.log('Progress saved via LocalStorage');
+            } catch (error) {
+                console.error('Error saving progress:', error);
+            }
+        }
+
+        function loadGameProgress() {
+            try {
+                const savedData = localStorage.getItem('quizMasterProChallenger');
+                if (savedData) {
+                    const saveData = JSON.parse(savedData);
+                    gameData.unlockedLevels = saveData.unlockedLevels || 1;
+                    console.log('Progress loaded via LocalStorage');
+                }
+            } catch (error) {
+                console.error('Error loading progress:', error);
+                gameData.unlockedLevels = 1;
+            }
+        }
+
+        function resetGameProgress() {
+            try {
+                localStorage.removeItem('quizMasterProChallenger');
+                gameData.unlockedLevels = 1;
+                gameData.usedQuestions.clear();
+                console.log('Progress reset via LocalStorage');
+            } catch (error) {
+                console.error('Error resetting progress:', error);
+            }
+        }
+
+        // Initialize game
+        function initGame() {
+            // Load saved progress
+            loadGameProgress();
+            
+            // Generate levels and update UI
+            generateLevels();
+            updateLevelButtons();
+        }
+
+        // Screen navigation
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+
+            if (screenId === 'levelSelect') {
+                updateLevelButtons();
+            } else if (screenId === 'gameScreen') {
+                startLevel(gameData.currentLevel);
+            }
+        }
+
+        // Update level selection buttons
+        function updateLevelButtons() {
+            const levelButtons = document.getElementById('levelButtons');
+            levelButtons.innerHTML = '';
+
+            gameData.levels.forEach((level, index) => {
+                const button = document.createElement('button');
+                button.className = `btn btn-level ${index >= gameData.unlockedLevels ? 'level-locked' : ''}`;
+                button.textContent = `${level.title} (${level.questionCount} Questions)`;
+                button.disabled = index >= gameData.unlockedLevels;
+                button.onclick = () => {
+                    gameData.currentLevel = index;
+                    showScreen('gameScreen');
+                };
+                levelButtons.appendChild(button);
+                
+                const info = document.createElement('div');
+                info.className = 'level-info';
+                info.textContent = `Questions: ${level.questionCount} | Unlock Score: ${Math.ceil(level.questionCount * 0.6)}/${level.questionCount}`;
+                levelButtons.appendChild(info);
+            });
+        }
+
+        // Start a level
+        function startLevel(levelIndex) {
+            gameData.currentQuestion = 0;
+            gameData.score = 0;
+            updateGameDisplay();
+        }
+
+        // Update game display
+        function updateGameDisplay() {
+            const level = gameData.levels[gameData.currentLevel];
+            const question = level.questions[gameData.currentQuestion];
+            
+            document.getElementById('levelTitle').textContent = `${level.title} (${level.questionCount} Questions)`;
+            document.getElementById('question').textContent = question.question;
+            document.getElementById('score').textContent = `Score: ${gameData.score}/${gameData.currentQuestion}`;
+            
+            const progress = ((gameData.currentQuestion) / level.questions.length) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Check answer
+        function checkAnswer(selectedIndex) {
+            const level = gameData.levels[gameData.currentLevel];
+            const question = level.questions[gameData.currentQuestion];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (selectedIndex === question.correct) {
+                options[selectedIndex].classList.add('correct');
+                gameData.score++;
+            } else {
+                options[selectedIndex].classList.add('wrong');
+                options[question.correct].classList.add('correct');
+            }
+            
+            setTimeout(() => {
+                gameData.currentQuestion++;
+                if (gameData.currentQuestion < level.questions.length) {
+                    updateGameDisplay();
+                } else {
+                    completeLevel();
+                }
+            }, 1500);
+        }
+
+        // Complete level
+        function completeLevel() {
+            const level = gameData.levels[gameData.currentLevel];
+            const totalQuestions = level.questions.length;
+            const passingScore = Math.ceil(totalQuestions * 0.6);
+            
+            document.getElementById('finalScore').textContent = `Score: ${gameData.score}/${totalQuestions}`;
+            
+            // UNLOCK NEXT LEVEL only if player scored 60% or more
+            if (gameData.score >= passingScore && gameData.currentLevel === gameData.unlockedLevels - 1) {
+                gameData.unlockedLevels++;
+                // Save progress using LocalStorage
+                saveGameProgress();
+            }
+            
+            showScreen('levelComplete');
+        }
+
+        // Handle level complete
+        function handleLevelComplete() {
+            updateLevelButtons();
+            showScreen('levelSelect');
+        }
+
+        // Reset data functions
+        function showResetWarning() {
+            document.getElementById('resetWarning').style.display = 'flex';
+        }
+
+        function hideResetWarning() {
+            document.getElementById('resetWarning').style.display = 'none';
+        }
+
+        function resetGameData() {
+            resetGameProgress();
+            // Regenerate levels with fresh questions
+            generateLevels();
+            updateLevelButtons();
+            hideResetWarning();
+            showScreen('mainMenu');
+        }
+
+        // Initialize game when page loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>
